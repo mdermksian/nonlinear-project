@@ -917,7 +917,8 @@ MulticopterAttitudeControl::run()
                             /* +  LQR Control if experiment_mode is On +*/
 						if (experiment_mode.experiment_on){
 							static Matrix<float,4,1> _u_control_n;
-							_LQRcontrol.setCurrentState(_v_att, _v_local_pos);
+							_LQRcontrol.setCurrentState(_v_true_att, _v_local_true_pos);
+							_LQRcontrol.setCurrentStateEkf(_v_att, _v_local_pos);
 
 							if (_LQRcontrol.isReadyForTracking()) {
 								if (ref_start_time == 0) {

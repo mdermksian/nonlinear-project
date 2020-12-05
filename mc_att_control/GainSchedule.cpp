@@ -46,7 +46,6 @@ void GainScheduleLin::loadControllers(const char *filename) {
                 std::string line;
                 std::getline(infile, line);
                 std::stringstream stream(line);
-                std::cout << line << std::endl;
                 for(int j = 0; j < nCol; ++j){
                     stream >> result(i,j);
                 }
@@ -105,7 +104,6 @@ void GainScheduleSwitch::loadRegions(const char *filename) {
                 stream >> temp[i];
             }
             Region tempreg(temp);
-            tempreg.print();
             regions.push_back(tempreg);
             if(infile.eof()) break;
         }

@@ -99,7 +99,7 @@ private:
       float ff_thrust;
 
       // void computeIntegral(struct vehicle_attitude_s _v_att, struct vehicle_local_position_s  _v_local_pos);
-      void computeIntegral();
+      void computeIntegral(Matrix<float, nState, 1> &state);
 
       void writeStateOnFile(const char *filename, Matrix <float, nState, 1> vect, hrt_abstime t); 
 
