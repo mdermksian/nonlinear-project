@@ -45,9 +45,6 @@ public:
        void setEquilibriumPoint(Matrix<float,nState,1> eqPoint);
 
        void setReferencePoint(Matrix<float,nRef, 1> ref);
-       
-       // void computeIntegral(struct vehicle_attitude_s _v_att, struct vehicle_local_position_s  _v_local_pos);
-       void computeIntegral();
 
        void setCurrentState(struct vehicle_attitude_s _v_att, struct vehicle_local_position_s  _v_local_pos);
        
@@ -101,6 +98,9 @@ private:
      
       float ff_thrust;
 
+      // void computeIntegral(struct vehicle_attitude_s _v_att, struct vehicle_local_position_s  _v_local_pos);
+      void computeIntegral();
+
       void writeStateOnFile(const char *filename, Matrix <float, nState, 1> vect, hrt_abstime t); 
 
       Matrix <float, nCont, nState> readMatrixK(const char *filename);
@@ -115,5 +115,5 @@ private:
 
       Matrix<float,nCont,1> u_control;
       
-
+      Matrix<float,3,3> world_to_body_rot(Matrix<float,3,1> euler_ang);
 };

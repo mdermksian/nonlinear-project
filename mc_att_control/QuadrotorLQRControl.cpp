@@ -123,15 +123,21 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
     static Matrix<float,1,1> _lyap_fun;     
     const hrt_abstime now = hrt_absolute_time();
 
+    // Select state origin (true or EKF)
+    // Matrix<float,12,1> state = _current_state;  
+    Matrix<float,12,1> state = _current_state_ekf;
+
     float _current_time = now *1e-6;
     // float dt = _current_time-_past_time;
      
     _past_time = _current_time;
 
     if(_ready_to_track){
-        delta_x = _current_state - _ref;
+        // delta_x = _current_state - _ref;
+        delta_x = state - _ref;
     } else {
-        delta_x   = _current_state - _eq_point;    
+        // delta_x   = _current_state - _eq_point;  
+        delta_x   = state - _eq_point;   
     }
     u_control = - _K*(delta_x); 
  
@@ -140,13 +146,19 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
     v_b = delta_x_T*_PMATRIX;
     _lyap_fun = v_b*delta_x;
     //cout<< dt << "\t" << _P(0,0) << "\n";
+
+    float phi = state(6,0);
+    float theta = state(7,0);
+    float ff_control = ff_thrust * cos(phi) * cos(theta); // scale gravity feedforward based on overall tilt
    // !! IMPORTANT scale the control inputs.......
 
 
-    u_control_norm(0,0) = fmin(fmax((u_control(0,0)+ff_thrust)/16.0f, 0.0f), 1.0f);
+    // u_control_norm(0,0) = fmin(fmax((u_control(0,0)+ff_thrust)/16.0f, 0.0f), 1.0f);
+    u_control_norm(0,0) = fmin(fmax((u_control(0,0)+ff_control)/16.0f, 0.0f), 1.0f);
     u_control_norm(1,0) = fmin(fmax((u_control(1,0))/(4.0f), -1.0f), 1.0f);  
     u_control_norm(2,0) = fmin(fmax((u_control(2,0))/(4.0f), -1.0f), 1.0f);
-    u_control_norm(3,0) = fmin(fmax((u_control(3,0))/(1.0f), -1.0f), 1.0f);
+    // u_control_norm(3,0) = fmin(fmax((u_control(3,0))/(1.0f), -1.0f), 1.0f);
+    u_control_norm(3,0) = fmin(fmax((u_control(3,0))/(0.05f), -1.0f), 1.0f);
 
    // not normalized control inputs
      u_control(0,0) = u_control_norm(0,0)*16.0f;
@@ -215,36 +227,82 @@ void QuadrotorLQRControl::computeIntegral()
 
 void QuadrotorLQRControl::setCurrentState(struct vehicle_attitude_s _v_att, struct vehicle_local_position_s  _v_local_pos)
 {
+    // _current_state(0,0) = _v_local_pos.x;
+    // _current_state(1,0) = _v_local_pos.y;
+    // _current_state(2,0) = -_v_local_pos.z;
+    // _current_state(3,0) = _v_local_pos.vx;
+    // _current_state(4,0) = _v_local_pos.vy;
+    // _current_state(5,0) = _v_local_pos.vz;
+
+    // _current_state(6,0)  = Eulerf(Quatf(_v_att.q)).phi();
+    // _current_state(7,0)  = Eulerf(Quatf(_v_att.q)).theta();
+    // _current_state(8,0) = Eulerf(Quatf(_v_att.q)).psi();
+    // _current_state(9,0)  = _v_att.rollspeed;
+    // _current_state(10,0)  = _v_att.pitchspeed;
+    // _current_state(11,0) = _v_att.yawspeed;
+
     _current_state(0,0) = _v_local_pos.x;
     _current_state(1,0) = _v_local_pos.y;
-    _current_state(2,0) = -_v_local_pos.z;
-    _current_state(3,0) = _v_local_pos.vx;
-    _current_state(4,0) = _v_local_pos.vy;
-    _current_state(5,0) = _v_local_pos.vz;
-
-    _current_state(6,0)  = Eulerf(Quatf(_v_att.q)).phi();
-    _current_state(7,0)  = Eulerf(Quatf(_v_att.q)).theta();
+    _current_state(2,0) = -1 * _v_local_pos.z;
+    _current_state(6,0) = Eulerf(Quatf(_v_att.q)).phi();
+    _current_state(7,0) = Eulerf(Quatf(_v_att.q)).theta();
     _current_state(8,0) = Eulerf(Quatf(_v_att.q)).psi();
-    _current_state(9,0)  = _v_att.rollspeed;
-    _current_state(10,0)  = _v_att.pitchspeed;
+    _current_state(9,0) = _v_att.rollspeed;
+    _current_state(10,0) = _v_att.pitchspeed;
     _current_state(11,0) = _v_att.yawspeed;
+
+    Matrix<float,3,1> world_vel;
+    world_vel(0,0) = _v_local_pos.vx;
+    world_vel(1,0) = _v_local_pos.vy;
+    world_vel(2,0) = _v_local_pos.vz;
+
+    Matrix<float,3,1> euler_ang = _current_state.slice<3,1>(6,0);
+    Matrix<float,3,3> rot_matrix = world_to_body_rot(euler_ang);
+
+    Matrix<float,3,1> body_vel = rot_matrix * world_vel;
+    _current_state(3,0) = body_vel(0,0);
+    _current_state(4,0) = body_vel(1,0);
+    _current_state(5,0) = body_vel(2,0);
 }
 
 void QuadrotorLQRControl::setCurrentStateEkf(struct vehicle_attitude_s _v_att, struct vehicle_local_position_s  _v_local_pos, vector<float> _integ_state)
 {
+    // _current_state_ekf(0,0) = _v_local_pos.x;
+    // _current_state_ekf(1,0) = _v_local_pos.y;
+    // _current_state_ekf(2,0) = -_v_local_pos.z;
+    // _current_state_ekf(3,0) = _v_local_pos.vx;
+    // _current_state_ekf(4,0) = _v_local_pos.vy;
+    // _current_state_ekf(5,0) = _v_local_pos.vz;
+
+    // _current_state_ekf(6,0)  = Eulerf(Quatf(_v_att.q)).phi();
+    // _current_state_ekf(7,0)  = Eulerf(Quatf(_v_att.q)).theta();
+    // _current_state_ekf(8,0) = Eulerf(Quatf(_v_att.q)).psi();
+    // _current_state_ekf(9,0)  = _v_att.rollspeed;
+    // _current_state_ekf(10,0)  = _v_att.pitchspeed;
+    // _current_state_ekf(11,0) = _v_att.yawspeed;
+
     _current_state_ekf(0,0) = _v_local_pos.x;
     _current_state_ekf(1,0) = _v_local_pos.y;
-    _current_state_ekf(2,0) = -_v_local_pos.z;
-    _current_state_ekf(3,0) = _v_local_pos.vx;
-    _current_state_ekf(4,0) = _v_local_pos.vy;
-    _current_state_ekf(5,0) = _v_local_pos.vz;
-
-    _current_state_ekf(6,0)  = Eulerf(Quatf(_v_att.q)).phi();
-    _current_state_ekf(7,0)  = Eulerf(Quatf(_v_att.q)).theta();
+    _current_state_ekf(2,0) = -1 * _v_local_pos.z;
+    _current_state_ekf(6,0) = Eulerf(Quatf(_v_att.q)).phi();
+    _current_state_ekf(7,0) = Eulerf(Quatf(_v_att.q)).theta();
     _current_state_ekf(8,0) = Eulerf(Quatf(_v_att.q)).psi();
-    _current_state_ekf(9,0)  = _v_att.rollspeed;
-    _current_state_ekf(10,0)  = _v_att.pitchspeed;
+    _current_state_ekf(9,0) = _v_att.rollspeed;
+    _current_state_ekf(10,0) = _v_att.pitchspeed;
     _current_state_ekf(11,0) = _v_att.yawspeed;
+
+    Matrix<float,3,1> world_vel;
+    world_vel(0,0) = _v_local_pos.vx;
+    world_vel(1,0) = _v_local_pos.vy;
+    world_vel(2,0) = _v_local_pos.vz;
+
+    Matrix<float,3,1> euler_ang = _current_state_ekf.slice<3,1>(6,0);
+    Matrix<float,3,3> rot_matrix = world_to_body_rot(euler_ang);
+
+    Matrix<float,3,1> body_vel = rot_matrix * world_vel;
+    _current_state_ekf(3,0) = body_vel(0,0);
+    _current_state_ekf(4,0) = body_vel(1,0);
+    _current_state_ekf(5,0) = body_vel(2,0);
 }
 
 
@@ -394,3 +452,23 @@ Matrix <float, nState, nState> QuadrotorLQRControl::readMatrixP(const char *file
 //     return result;
 
 //  }
+
+Matrix<float,3,3> QuadrotorLQRControl::world_to_body_rot(Matrix<float,3,1> euler_ang) {
+  float phi = euler_ang(0,0);
+  float theta = euler_ang(1,0);
+  float psi = euler_ang(2,0);
+
+  Matrix<float,3,3> rot_mat;
+
+  rot_mat(0,0) = cos(theta) * cos(psi);
+  rot_mat(0,1) = cos(theta) * sin(psi);
+  rot_mat(0,2) = -1 * sin(theta);
+  rot_mat(1,0) = sin(phi) * sin(theta) * cos(psi)  -  cos(phi) * sin(psi);
+  rot_mat(1,1) = sin(phi) * sin(theta) * sin(psi)  +  cos(phi) * cos(psi);
+  rot_mat(1,2) = sin(phi) * cos(theta);
+  rot_mat(2,0) = cos(phi) * sin(theta) * cos(psi)  +  sin(phi) * sin(psi);
+  rot_mat(2,1) = cos(phi) * sin(theta) * sin(psi)  -  sin(phi) * cos(psi);
+  rot_mat(2,2) = cos(phi) * cos(theta);
+
+  return rot_mat;
+}
