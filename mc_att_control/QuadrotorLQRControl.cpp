@@ -153,7 +153,8 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
     // cout << state(12,0) << ", " << state(13,0) << ", " << state(14,0) << ", " << state(15,0) << endl;
 
     Matrix<float,nCont,nState> K = gs_lin.getK(state(8,0));
-    cout << gs_lin.getRegionInd(state(8,0)) << ", " << state(8,0) << endl;
+    // cout << gs_lin.getRegionInd(state(8,0)) << ", " << state(8,0) << endl;
+    cout << _ref(8,0) << ",  " << state(8,0) << endl;
     u_control = -0.5f*K*(delta_x);
 
     // delta_x_T = delta_x.transpose();
@@ -275,7 +276,7 @@ void QuadrotorLQRControl::setCurrentState(struct vehicle_attitude_s _v_att, stru
     _current_state(7,0) = Eulerf(Quatf(_v_att.q)).theta();
     float psi = Eulerf(Quatf(_v_att.q)).psi();
     float last_psi = _current_state(8,0);
-    psi = wrap2pi(psi, last_psi);
+    psi = unwrap2pi(psi, last_psi);
     _current_state(8,0) = psi;
     _current_state(9,0) = _v_att.rollspeed;
     _current_state(10,0) = _v_att.pitchspeed;
@@ -320,7 +321,7 @@ void QuadrotorLQRControl::setCurrentStateEkf(struct vehicle_attitude_s _v_att, s
     _current_state_ekf(7,0) = Eulerf(Quatf(_v_att.q)).theta();
     float psi = Eulerf(Quatf(_v_att.q)).psi();
     float last_psi = _current_state_ekf(8,0);
-    psi = wrap2pi(psi, last_psi);
+    psi = unwrap2pi(psi, last_psi);
     _current_state_ekf(8,0) = psi;
     _current_state_ekf(9,0) = _v_att.rollspeed;
     _current_state_ekf(10,0) = _v_att.pitchspeed;

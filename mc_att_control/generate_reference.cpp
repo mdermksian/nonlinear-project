@@ -8,9 +8,11 @@ Matrix<float,4,1>  generate_reference(float t, int type, float last_psir){
 	Matrix<float,4,1> pt;
 	float PI = 3.14159265;
 	if(type == 0){ // Helix
-		float rad = 0.25f;
+		// float rad = 0.25f;
+		float rad = 0.0f;
 		float w = 0.1f;
-		float z_rate = 0.5f;
+		// float z_rate = 0.5f;
+		float z_rate = 0.0f;
 
 		float psir = 2*PI * w * t;
 		float pNr = rad * cos(psir);
@@ -33,7 +35,7 @@ Matrix<float,4,1>  generate_reference(float t, int type, float last_psir){
 		float dpNr = 2*PI * a * A * cos(2*PI*a*t + d);
     	float dpEr = 2*PI * b * B * cos(2*PI*b*t);
 		float psir = atan2(dpEr, dpNr);
-		psir = wrap2pi(psir, last_psir);
+		psir = unwrap2pi(psir, last_psir);
 		float pNr = A * sin(2*PI*a*t + d);
     	float pEr = B * sin(2*PI*b*t);
 		float hr = z_step * floor(t / z_per);
@@ -47,7 +49,7 @@ Matrix<float,4,1>  generate_reference(float t, int type, float last_psir){
 	return pt;
 };
 
-float wrap2pi(float ang, float lastang) {
+float unwrap2pi(float ang, float lastang) {
 	const int PI = 3.14159265;
 	while(abs(ang - lastang) > PI) {
 		float val = ang - lastang;
