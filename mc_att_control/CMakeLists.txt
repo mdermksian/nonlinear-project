@@ -43,6 +43,7 @@ px4_add_module(
 		mc_att_control_main.cpp
 		QuadrotorLQRControl.cpp
 		GainSchedule.cpp
+		generate_reference.cpp
 	DEPENDS
 		circuit_breaker
 		conversion

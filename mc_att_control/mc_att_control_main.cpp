@@ -60,6 +60,7 @@
 #include <iostream>
 #include <cmath>
 #include <memory>
+#include "generate_reference.hpp"
 
 #include <uORB/topics/experiment_mode.h>
 #include <uORB/topics/vehicle_local_position.h>
@@ -123,7 +124,8 @@ MulticopterAttitudeControl::MulticopterAttitudeControl() :
 		_sensor_gyro_sub[i] = -1;
 	}
 
-	traj_start_time = 0;
+	ref_start_time = 0;
+	ref_type = 0; // <---------- CHANGE THIS
 
 	_vehicle_status.is_rotary_wing = true;
 
@@ -918,12 +920,14 @@ MulticopterAttitudeControl::run()
 							_LQRcontrol.setCurrentState(_v_att, _v_local_pos);
 
 							if (_LQRcontrol.isReadyForTracking()) {
-								if (traj_start_time == 0) {
-									traj_start_time = hrt_absolute_time();
-									cout << "STARTING TRAJECTORY" << endl;
+								if (ref_start_time == 0) {
+									ref_start_time = hrt_absolute_time();
+									_LQRcontrol.setReferenceType(ref_type);
+									cout << "STARTING REFERENCE" << endl;
 								}
-								float cur_t = (hrt_absolute_time()-traj_start_time) * 1e-6;
-								Matrix<float,4,1> traj_pt = generate_trajectory(cur_t);
+								float cur_t = (hrt_absolute_time()-ref_start_time) * 1e-6;
+								Matrix<float,4,1> ref_pt = generate_reference(cur_t, 0, reference_inputs(3,0));
+								reference_inputs = ref_pt;
 							} else {
 								_u_control_n = _LQRcontrol.LQRcontrol();  // LQR Control
 							}

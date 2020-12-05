@@ -131,7 +131,6 @@ private:
         bool            vehicle_attitude_local_true_poll(); // added
         void            vehicle_attitude_local_poll(); //added
         void            experiment_mode_poll();
-		Matrix<float,4,1> generate_trajectory(float t);
         /* -----------------------------------------------------*/
 
 	float		throttle_curve(float throttle_stick_input);
@@ -367,7 +366,8 @@ private:
         Matrix<float,16,1> state_eq_int;            /**< dynamic equilibrium point*/
         Matrix<float, 4,1> state_int;           /**< state space integrator */
         Matrix<float, 4,1> reference_inputs;     /**< reference inputs: x - y - z - psi */
-		hrt_abstime traj_start_time;
+		hrt_abstime ref_start_time;
+		int ref_type;
         /* ------------------------------------------*/
 
 };

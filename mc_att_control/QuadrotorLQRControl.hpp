@@ -67,6 +67,8 @@ public:
        Matrix<float,nCont,1> normalizationControlInputs(Matrix<float,nCont,1> _u);
 
        bool isReadyForTracking(void);
+
+       void setReferenceType(int type);
        
 
 private:
@@ -80,6 +82,10 @@ private:
       GainScheduleContin gs_contin;
        
       Matrix<float,nState,1> _eq_point;
+
+      Matrix<float,nState,1> _ref;
+
+      int ref_type;
 
       Matrix<float,nCont,nState> _K;
       

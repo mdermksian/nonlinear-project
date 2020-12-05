@@ -36,6 +36,10 @@ QuadrotorLQRControl::QuadrotorLQRControl()
     _eq_point(1,0) =  0.0f;
     _eq_point(2,0) =  1.0f;
 
+    _ref = _eq_point;
+
+    ref_type = 0;
+
     u_control(0,0) = 0.0f;
     u_control(1,0) = 0.0f;
     u_control(2,0) = 0.0f;
@@ -105,7 +109,8 @@ bool QuadrotorLQRControl::isReadyForTracking(void)
 Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
 {
     if(!_ready_to_track){
-        if((_current_state(0,0)^2 + _current_state(0,1)^2 + _current_state(0,2)^2) < 1e-3){
+        // Check if within 1cm of equilibrium point euclidean distance (not necessarily stable!)
+        if( (pow(_current_state(0,0)-_eq_point(0,0), 2) + pow(_current_state(1,0)-_eq_point(1,0), 2) + pow(_current_state(2,0)-_eq_point(2,0),2)) < 1e-3 ){
             _ready_to_track = true;
         }
     }
@@ -122,7 +127,11 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
      
     _past_time = _current_time;
 
-    delta_x   = _current_state - _eq_point;    
+    if(_ready_to_track){
+        delta_x = _current_state - _ref;
+    } else {
+        delta_x   = _current_state - _eq_point;    
+    }
     u_control = - _K*(delta_x); 
  
     delta_x_T = delta_x.transpose();
@@ -257,19 +266,14 @@ void QuadrotorLQRControl::setEquilibriumPoint(Matrix<float,nState,1> eqPoint)
 
 void QuadrotorLQRControl::setReferencePoint(Matrix<float,4,1> ref)
 {
-    _eq_point(0,0) = eqPoint(0,0);
-    _eq_point(1,0) = eqPoint(1,0);
-    _eq_point(2,0) = eqPoint(2,0);
-    _eq_point(3,0) = eqPoint(3,0);
-    _eq_point(4,0) = eqPoint(4,0);
-    _eq_point(5,0) = eqPoint(5,0);
+    _ref(0, 0) = ref(0, 0);
+    _ref(0, 1) = ref(0, 1);
+    _ref(0, 2) = ref(0, 2);
+    _ref(0, 9) = ref(0, 3);
+}
 
-    _eq_point(6,0)  = eqPoint(6,0);
-    _eq_point(7,0)  = eqPoint(7,0);
-    _eq_point(8,0)  = eqPoint(8,0);
-    _eq_point(9,0)  = eqPoint(9,0);
-    _eq_point(10,0) = eqPoint(10,0);
-    _eq_point(11,0) = eqPoint(11,0);
+void QuadrotorLQRControl::setReferenceType(int type) {
+    ref_type = type;
 }
 
 void QuadrotorLQRControl::setAutoEqPointFlag(bool flag)
