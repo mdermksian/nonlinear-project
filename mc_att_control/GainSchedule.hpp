@@ -57,5 +57,8 @@ private:
 class GainScheduleContin {
 public:
     GainScheduleContin();
-    matrix::Matrix<float,nRow,nCol> getK(float x);
+    void loadMatrices(const char *filename);
+    matrix::Matrix<float,nRow,nCol> getK(float psi);
+private:
+    std::vector<matrix::Matrix<float,nRow,nCol>> param_mat;
 };

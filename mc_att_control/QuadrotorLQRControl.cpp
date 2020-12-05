@@ -46,9 +46,14 @@ QuadrotorLQRControl::QuadrotorLQRControl()
     u_control(2,0) = 0.0f;
     u_control(3,0) = 0.0f;
 
-    gs_switch.loadRegions("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/regions.txt");
-    gs_switch.loadControllers("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/controllers.txt");
+    gs_switch.loadRegions("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/regions_switch.txt");
+    gs_switch.loadControllers("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/k_switch.txt");
     gs_switch.initializeRegion(_current_state(8, 0));
+
+    gs_lin.loadRegions("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/regions_lin.txt");
+    gs_lin.loadControllers("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/k_lin.txt");
+
+    gs_contin.loadMatrices("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/contin_param.txt")
 
     _K = readMatrixK("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/new_controller.txt");
     _PMATRIX = readMatrixP("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/new_pe.txt");
@@ -124,8 +129,8 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
     const hrt_abstime now = hrt_absolute_time();
 
     // Select state origin (true or EKF)
-    // Matrix<float,12,1> state = _current_state;  
-    Matrix<float,12,1> state = _current_state_ekf;
+    Matrix<float,nState,1> state = _current_state;  
+    // Matrix<float,nState,1> state = _current_state_ekf;
 
     float _current_time = now *1e-6;
     // float dt = _current_time-_past_time;
@@ -139,7 +144,8 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
         // delta_x   = _current_state - _eq_point;  
         delta_x   = state - _eq_point;   
     }
-    u_control = - _K*(delta_x); 
+    Matrix<nCont,nState> K = gs_contin.getK(state(8,1));
+    u_control = - K*(delta_x); 
  
     delta_x_T = delta_x.transpose();
     
