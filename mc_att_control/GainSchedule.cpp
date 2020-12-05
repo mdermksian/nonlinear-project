@@ -10,6 +10,15 @@
 /********************************************/
 /* LINEAR INTERPOLATION GAIN SCHEDULE CLASS */
 /********************************************/
+
+float cast2pi(float psi) {
+    const float PI = 3.14159265;
+    while(psi < 0) {
+        psi += 2*PI;
+    }
+    return fmod(psi, 2*PI);
+}
+
 GainScheduleLin::GainScheduleLin() {
     min = 0.0;
     max = 0.0;
@@ -60,6 +69,7 @@ void GainScheduleLin::loadControllers(const char *filename) {
 }
 
 int GainScheduleLin::getRegionInd(float psi) {
+    psi = cast2pi(psi);
     float range = max - min;
     float step = range/(numreg);
     int ind = (psi-min)/step;
@@ -72,6 +82,7 @@ int GainScheduleLin::getRegionInd(float psi) {
 }
 
 matrix::Matrix<float,nRow,nCol> GainScheduleLin::getK(float psi) {
+    psi = cast2pi(psi);
     int ind = getRegionInd(psi);
     float pos = (psi - regions[ind])/(regions[ind+1] - regions[ind]);
     matrix::Matrix<float,nRow,nCol> K1 = K[ind];
@@ -139,6 +150,7 @@ void GainScheduleSwitch::loadControllers(const char *filename) {
 }
 
 void GainScheduleSwitch::initializeRegion(float psi) {
+    psi = cast2pi(psi);
     int ind = -1;
     float lowest = 1e10; //Arbitrary large number to ensure that we find a lower one
     for(int i = 0; i < (int)regions.size(); ++i) {
@@ -159,6 +171,7 @@ void GainScheduleSwitch::initializeRegion(float psi) {
 }
 
 int GainScheduleSwitch::getRegionInd(float psi) {
+    psi = cast2pi(psi);
     int ind = cur_reg;
     Region current = regions[cur_reg];
     if(psi > current.end) {
@@ -178,6 +191,7 @@ int GainScheduleSwitch::getRegionInd(float psi) {
 }
 
 matrix::Matrix<float,nRow,nCol> GainScheduleSwitch::getK(float psi) {
+    psi = cast2pi(psi);
     int ind = getRegionInd(psi);
     return K[ind];
 }
@@ -214,6 +228,7 @@ void GainScheduleContin::loadMatrices(const char *filename) {
 }
 
 matrix::Matrix<float,nRow,nCol> GainScheduleContin::getK(float psi) {
+    psi = cast2pi(psi);
     matrix::Matrix<float,nRow,nCol> output;
     for(int i = 0; i < nRow; ++i){
         for(int j = 0; j < nCol; ++j){

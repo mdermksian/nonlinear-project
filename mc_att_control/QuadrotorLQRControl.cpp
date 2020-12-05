@@ -59,7 +59,7 @@ QuadrotorLQRControl::QuadrotorLQRControl()
     // _K = readMatrixK("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/new_controller.txt");
     // _PMATRIX = readMatrixP("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/new_pe.txt");
 
-    ff_thrust = 0.0f;//7.848f; [N]
+    ff_thrust = 7.848f; //[N]
 
     _auto_eq_point_flag = true;
 
@@ -121,8 +121,8 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
     if(!_ready_to_track){
         // Check if within 1cm of equilibrium point euclidean distance (not necessarily stable!)
         float dist = (pow(state(0,0)-_eq_point(0,0), 2) + pow(state(1,0)-_eq_point(1,0), 2) + pow(state(2,0)-_eq_point(2,0),2));
-        if( dist < 1e-3 ){
-            // _ready_to_track = true;
+        if( dist < 1e-3 && fabs(state(14, 0)) < 0.05f ){
+            _ready_to_track = true;
         }
     }
 
@@ -152,7 +152,8 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
 
     // cout << state(12,0) << ", " << state(13,0) << ", " << state(14,0) << ", " << state(15,0) << endl;
 
-    Matrix<float,nCont,nState> K = gs_lin.getK(state(8,1));
+    Matrix<float,nCont,nState> K = gs_lin.getK(state(8,0));
+    cout << gs_lin.getRegionInd(state(8,0)) << ", " << state(8,0) << endl;
     u_control = -0.5f*K*(delta_x);
 
     // delta_x_T = delta_x.transpose();
@@ -237,16 +238,17 @@ void QuadrotorLQRControl::computeIntegral(Matrix<float, nState, 1> &state)
         float sigma0 = state(12+i,0);
         float dsigma0 = error;
         float sigma_mid = sigma0 + dt * dsigma0;
-        Matrix<float,4,1> refs_i;
-        if(_ready_to_track){
-            refs_i = generate_reference(_current_time+dt, ref_type, _ref(8,0));
-        } else {
-            refs_i = _eq_point.slice<4,1>(0,0);
-            refs_i(3, 0) = _eq_point(8, 0);
-        }
-        float ref_i = refs_i(i,0);
-        float dsigma_mid = sigma_mid - ref_i;
-        state(12+i,0) = sigma0 + dt * (dsigma0 + dsigma_mid) / 2;
+        state(12+i,0) = sigma_mid;
+        // Matrix<float,4,1> refs_i;
+        // if(_ready_to_track){
+        //     refs_i = generate_reference(_current_time+dt, ref_type, _ref(8,0));
+        // } else {
+        //     refs_i = _eq_point.slice<4,1>(0,0);
+        //     refs_i(3, 0) = _eq_point(8, 0);
+        // }
+        // float ref_i = refs_i(i,0);
+        // float dsigma_mid = sigma_mid - ref_i;
+        // state(12+i,0) = sigma0 + dt * (dsigma0 + dsigma_mid) / 2;
     }
 }
 
@@ -271,7 +273,10 @@ void QuadrotorLQRControl::setCurrentState(struct vehicle_attitude_s _v_att, stru
     _current_state(2,0) = -1 * _v_local_pos.z;
     _current_state(6,0) = Eulerf(Quatf(_v_att.q)).phi();
     _current_state(7,0) = Eulerf(Quatf(_v_att.q)).theta();
-    _current_state(8,0) = Eulerf(Quatf(_v_att.q)).psi();
+    float psi = Eulerf(Quatf(_v_att.q)).psi();
+    float last_psi = _current_state(8,0);
+    psi = wrap2pi(psi, last_psi);
+    _current_state(8,0) = psi;
     _current_state(9,0) = _v_att.rollspeed;
     _current_state(10,0) = _v_att.pitchspeed;
     _current_state(11,0) = _v_att.yawspeed;
@@ -313,7 +318,10 @@ void QuadrotorLQRControl::setCurrentStateEkf(struct vehicle_attitude_s _v_att, s
     _current_state_ekf(2,0) = -1 * _v_local_pos.z;
     _current_state_ekf(6,0) = Eulerf(Quatf(_v_att.q)).phi();
     _current_state_ekf(7,0) = Eulerf(Quatf(_v_att.q)).theta();
-    _current_state_ekf(8,0) = Eulerf(Quatf(_v_att.q)).psi();
+    float psi = Eulerf(Quatf(_v_att.q)).psi();
+    float last_psi = _current_state_ekf(8,0);
+    psi = wrap2pi(psi, last_psi);
+    _current_state_ekf(8,0) = psi;
     _current_state_ekf(9,0) = _v_att.rollspeed;
     _current_state_ekf(10,0) = _v_att.pitchspeed;
     _current_state_ekf(11,0) = _v_att.yawspeed;

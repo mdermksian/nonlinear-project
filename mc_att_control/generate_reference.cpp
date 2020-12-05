@@ -1,9 +1,10 @@
 #include <cmath>
 #include <matrix/matrix/math.hpp>
+#include "generate_reference.hpp"
 
 using namespace matrix;
 
-Matrix<float,4,1>  generate_reference(float t, int type = 0, float last_psir = 0.0f){
+Matrix<float,4,1>  generate_reference(float t, int type, float last_psir){
 	Matrix<float,4,1> pt;
 	float PI = 3.14159265;
 	if(type == 0){ // Helix
@@ -32,11 +33,7 @@ Matrix<float,4,1>  generate_reference(float t, int type = 0, float last_psir = 0
 		float dpNr = 2*PI * a * A * cos(2*PI*a*t + d);
     	float dpEr = 2*PI * b * B * cos(2*PI*b*t);
 		float psir = atan2(dpEr, dpNr);
-		while(abs(psir - last_psir) > PI) {
-			float val = psir - last_psir;
-			int sign = (float(0) < val) - (val < float(0));
-			psir = psir - 2*PI * sign;
-		}
+		psir = wrap2pi(psir, last_psir);
 		float pNr = A * sin(2*PI*a*t + d);
     	float pEr = B * sin(2*PI*b*t);
 		float hr = z_step * floor(t / z_per);
@@ -49,3 +46,13 @@ Matrix<float,4,1>  generate_reference(float t, int type = 0, float last_psir = 0
 
 	return pt;
 };
+
+float wrap2pi(float ang, float lastang) {
+	const int PI = 3.14159265;
+	while(abs(ang - lastang) > PI) {
+		float val = ang - lastang;
+		int sign = (float(0) < val) - (val < float(0));
+		ang = ang - 2*PI * sign;
+	}
+	return ang;
+}
