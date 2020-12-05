@@ -18,6 +18,7 @@
 #include <cmath>
 #include <memory>
 #include <sstream>
+#include "generate_reference.hpp"
 
 using namespace matrix;
 using namespace std;
@@ -47,7 +48,7 @@ QuadrotorLQRControl::QuadrotorLQRControl()
 
     gs_switch.loadRegions("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/regions.txt");
     gs_switch.loadControllers("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/controllers.txt");
-    gs_switch.initializeRegion(_current_state(9, 0));
+    gs_switch.initializeRegion(_current_state(8, 0));
 
     _K = readMatrixK("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/new_controller.txt");
     _PMATRIX = readMatrixP("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/new_pe.txt");
@@ -142,10 +143,10 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
    // !! IMPORTANT scale the control inputs.......
 
 
-    u_control_norm(1,0) = fmin(fmax((u_control(1,0))/(4.0f), -1.0f), 1.0f);  
-    u_control_norm(2,0) = fmin(fmax((u_control(2,0))/(4.0f),  -1.0f), 1.0f);
-    u_control_norm(3,0) = fmin(fmax((u_control(3,0))/(1.0f), -1.0f), 1.0f);
     u_control_norm(0,0) = fmin(fmax((u_control(0,0)+ff_thrust)/16.0f, 0.0f), 1.0f);
+    u_control_norm(1,0) = fmin(fmax((u_control(1,0))/(4.0f), -1.0f), 1.0f);  
+    u_control_norm(2,0) = fmin(fmax((u_control(2,0))/(4.0f), -1.0f), 1.0f);
+    u_control_norm(3,0) = fmin(fmax((u_control(3,0))/(1.0f), -1.0f), 1.0f);
 
    // not normalized control inputs
      u_control(0,0) = u_control_norm(0,0)*16.0f;
@@ -190,19 +191,23 @@ void QuadrotorLQRControl::computeIntegral()
     const hrt_abstime now = hrt_absolute_time();
     float _current_time = now *1e-6;
     float dt = _current_time - _past_time;
-    
-    Matrix<float,4,1> errors;
-    errors(0,0) = _current_state(0,0) - _eq_point(0,0);
-    errors(1,0) = _current_state(1,0) - _eq_point(1,0);
-    errors(2,0) = _current_state(2,0) - _eq_point(2,0);
-    errors(3,0) = _current_state(8,0) - _eq_point(8,0);
+    int integ_states[] = {0, 1, 2, 8};
     
     Matrix<float,4,1> sigma;
     for(size_t i = 0; i < nRef; ++i) {
+        int ind = integ_states[i];
+        float error;
+        if(_ready_to_track) {
+            error = _current_state(ind,0) - _ref(ind,0);
+        } else {
+            error = _current_state(ind,0) - _eq_point(ind,0);
+        }
+        
         float sigma0 = _current_state(12+i,0);
-        float dsigma0 = errors(i,0);
+        float dsigma0 = error;
         float sigma_mid = sigma0 + dt * dsigma0;
-        float ref_i = 0;  // REPLACE WITH CALL TO REFERENCE
+        Matrix<float,4,1> refs_i = generate_reference(_current_time+dt, ref_type, _ref(8,0))
+        float ref_i = refs_i(i,0);
         float dsigma_mid = sigma_mid - ref_i;
         _current_state(12+i,0) = sigma0 + dt * (dsigma0 + dsigma_mid) / 2;
     }
@@ -282,7 +287,7 @@ void QuadrotorLQRControl::setReferencePoint(Matrix<float,4,1> ref)
     _ref(0, 0) = ref(0, 0);
     _ref(0, 1) = ref(0, 1);
     _ref(0, 2) = ref(0, 2);
-    _ref(0, 9) = ref(0, 3);
+    _ref(0, 8) = ref(0, 3);
 }
 
 void QuadrotorLQRControl::setReferenceType(int type) {
