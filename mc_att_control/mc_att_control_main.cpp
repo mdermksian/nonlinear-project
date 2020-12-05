@@ -928,10 +928,10 @@ MulticopterAttitudeControl::run()
 								}
 								float cur_t = (hrt_absolute_time()-ref_start_time) * 1e-6;
 								Matrix<float,4,1> ref_pt = generate_reference(cur_t, 0, reference_inputs(3,0));
+								_LQRcontrol.setReferencePoint(ref_pt);
 								reference_inputs = ref_pt;
-							} else {
-								_u_control_n = _LQRcontrol.LQRcontrol();  // LQR Control
 							}
+							_u_control_n = _LQRcontrol.LQRcontrol();  // LQR Control
 							
 							// Prepare control inputs for publication
 							_thrust_sp = _u_control_n(0,0);

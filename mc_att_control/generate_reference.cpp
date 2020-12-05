@@ -7,7 +7,7 @@ Matrix<float,4,1>  generate_reference(float t, int type = 0, float last_psir = 0
 	Matrix<float,4,1> pt;
 	float PI = 3.14159265;
 	if(type == 0){ // Helix
-		float rad = 1.0f;
+		float rad = 0.25f;
 		float w = 0.1f;
 		float z_rate = 0.5f;
 
@@ -17,9 +17,9 @@ Matrix<float,4,1>  generate_reference(float t, int type = 0, float last_psir = 0
 		float hr = z_rate * t;
 
 		pt(0,0) = pNr;
-		pt(0,1) = pEr;
-		pt(0,2) = hr;
-		pt(0,3) = psir;
+		pt(1,0) = pEr;
+		pt(2,0) = hr+1.0f;
+		pt(3,0) = psir;
 	} else { // Lissajous
 		float A = 2.0f;
 		float a = 0.1f;
@@ -42,9 +42,9 @@ Matrix<float,4,1>  generate_reference(float t, int type = 0, float last_psir = 0
 		float hr = z_step * floor(t / z_per);
 
 		pt(0,0) = pNr;
-		pt(0,1) = pEr;
-		pt(0,2) = hr;
-		pt(0,3) = psir;
+		pt(1,0) = pEr;
+		pt(2,0) = hr+1.0f;
+		pt(3,0) = psir;
 	}
 
 	return pt;

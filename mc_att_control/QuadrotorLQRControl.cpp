@@ -59,7 +59,7 @@ QuadrotorLQRControl::QuadrotorLQRControl()
     // _K = readMatrixK("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/new_controller.txt");
     // _PMATRIX = readMatrixP("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/new_pe.txt");
 
-    ff_thrust = 8.0f;//7.848f;//5.887f; // [N]
+    ff_thrust = 0.0f;//7.848f; [N]
 
     _auto_eq_point_flag = true;
 
@@ -80,9 +80,6 @@ QuadrotorLQRControl::QuadrotorLQRControl()
     outfile4.close();
 
     _past_time = hrt_absolute_time() * 1e-6;
-
-    cout << "Printing at end of constructor" << endl;
-    cout << _current_state_ekf(12,0) << ", " << _current_state_ekf(13,0) << ", " << _current_state_ekf(14,0) << ", " << _current_state_ekf(15,0) << endl;
 }
 
 
@@ -125,9 +122,11 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
         // Check if within 1cm of equilibrium point euclidean distance (not necessarily stable!)
         float dist = (pow(state(0,0)-_eq_point(0,0), 2) + pow(state(1,0)-_eq_point(1,0), 2) + pow(state(2,0)-_eq_point(2,0),2));
         if( dist < 1e-3 ){
-            _ready_to_track = true;
+            // _ready_to_track = true;
         }
     }
+
+    // cout << _ready_to_track << endl;
 
     //static Matrix<float,4,1> u_control;
     static Matrix<float,nCont,1> u_control_norm;
@@ -144,6 +143,7 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
 
     if(_ready_to_track){
         // delta_x = _current_state - _ref;
+        // cout << _ref(0, 0) << ", " << _ref(1, 0) << ", " << _ref(2, 0) << endl;
         delta_x = state - _ref;
     } else {
         // delta_x   = _current_state - _eq_point;  
@@ -152,9 +152,9 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
 
     // cout << state(12,0) << ", " << state(13,0) << ", " << state(14,0) << ", " << state(15,0) << endl;
 
-    Matrix<float,nCont,nState> K = gs_contin.getK(state(8,1));
-    u_control = -K*(delta_x); 
- 
+    Matrix<float,nCont,nState> K = gs_lin.getK(state(8,1));
+    u_control = -0.5f*K*(delta_x);
+
     // delta_x_T = delta_x.transpose();
     
     // v_b = delta_x_T*_PMATRIX;
@@ -174,7 +174,7 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
     // u_control_norm(3,0) = fmin(fmax((u_control(3,0))/(1.0f), -1.0f), 1.0f);
     u_control_norm(3,0) = fmin(fmax((u_control(3,0))/(0.05f), -1.0f), 1.0f);
 
-    cout << u_control_norm(0,0) << ", " << u_control_norm(1,0) << ", " << u_control_norm(2,0) << ", " << u_control_norm(3,0) << endl; 
+    // cout << u_control_norm(0,0) << ", " << u_control_norm(1,0) << ", " << u_control_norm(2,0) << ", " << u_control_norm(3,0) << endl; 
 
    // not normalized control inputs
      u_control(0,0) = u_control_norm(0,0)*16.0f;
@@ -372,9 +372,9 @@ void QuadrotorLQRControl::setEquilibriumPoint(Matrix<float,nState,1> eqPoint)
 void QuadrotorLQRControl::setReferencePoint(Matrix<float,4,1> ref)
 {
     _ref(0, 0) = ref(0, 0);
-    _ref(0, 1) = ref(0, 1);
-    _ref(0, 2) = ref(0, 2);
-    _ref(0, 8) = ref(0, 3);
+    _ref(1, 0) = ref(1, 0);
+    _ref(2, 0) = ref(2, 0);
+    _ref(8, 0) = ref(3, 0);
 }
 
 void QuadrotorLQRControl::setReferenceType(int type) {
