@@ -176,14 +176,27 @@ void QuadrotorLQRControl::setCurrentState(Matrix<float,nState,1> _state_estimate
     _current_state = _state_estimate;
 }
 
-void QuadrotorLQRControl::computeIntegral(struct vehicle_attitude_s _v_att, struct vehicle_local_position_s  _v_local_pos)
+void QuadrotorLQRControl::computeIntegral()
 {
     const hrt_abstime now = hrt_absolute_time();
     float _current_time = now *1e-6;
     float dt = _current_time - _past_time;
     
-    float x_err = _current_state(0,0) - 
-     
+    Matrix<float,4,1> errors;
+    errors(0,0) = _current_state(0,0) - _eq_point(0,0);
+    errors(1,0) = _current_state(1,0) - _eq_point(1,0);
+    errors(2,0) = _current_state(2,0) - _eq_point(2,0);
+    errors(3,0) = _current_state(8,0) - _eq_point(8,0);
+    
+    Matrix<float,4,1> sigma;
+    for(size_t i = 0; i < nRef; ++i) {
+        float sigma0 = _current_state(12+i,0);
+        float dsigma0 = errors(i,0);
+        float sigma_mid = sigma0 + dt * dsigma0;
+        float ref_i = 0;  // REPLACE WITH CALL TO REFERENCE
+        float dsigma_mid = sigma_mid - ref_i;
+        _current_state(12+i,0) = sigma0 + dt * (dsigma0 + dsigma_mid) / 2;
+    }
 }
 
 void QuadrotorLQRControl::setCurrentState(struct vehicle_attitude_s _v_att, struct vehicle_local_position_s  _v_local_pos)

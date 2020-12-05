@@ -46,7 +46,8 @@ public:
 
        void setReferencePoint(Matrix<float,nRef, 1> ref);
        
-       void computeIntegral(struct vehicle_attitude_s _v_att, struct vehicle_local_position_s  _v_local_pos);
+       // void computeIntegral(struct vehicle_attitude_s _v_att, struct vehicle_local_position_s  _v_local_pos);
+       void computeIntegral();
 
        void setCurrentState(struct vehicle_attitude_s _v_att, struct vehicle_local_position_s  _v_local_pos);
        
