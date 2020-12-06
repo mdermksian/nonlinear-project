@@ -23,6 +23,8 @@
 using namespace matrix;
 using namespace std;
 
+string localpath("/cygdrive/c/PX4/home"); //<--- This is the path to the folder containing "Firmware"
+
 QuadrotorLQRControl::QuadrotorLQRControl()
 {
     for (int i=0;i<nState;i++)
@@ -47,14 +49,14 @@ QuadrotorLQRControl::QuadrotorLQRControl()
     u_control(2,0) = 0.0f;
     u_control(3,0) = 0.0f;
 
-    gs_switch.loadRegions("/home/ubuntu/src/Firmware/src/modules/mc_att_control/lqr_files/regions_switch.txt");
-    gs_switch.loadControllers("/home/ubuntu/src/Firmware/src/modules/mc_att_control/lqr_files/k_switch.txt");
+    gs_switch.loadRegions((localpath + "/Firmware/src/modules/mc_att_control/lqr_files/regions_switch.txt").c_str());
+    gs_switch.loadControllers((localpath + "/Firmware/src/modules/mc_att_control/lqr_files/k_switch.txt").c_str());
     gs_switch.initializeRegion(_current_state(8, 0));
 
-    gs_lin.loadRegions("/home/ubuntu/src/Firmware/src/modules/mc_att_control/lqr_files/regions_lin.txt");
-    gs_lin.loadControllers("/home/ubuntu/src/Firmware/src/modules/mc_att_control/lqr_files/k_lin.txt");
+    gs_lin.loadRegions((localpath + "/Firmware/src/modules/mc_att_control/lqr_files/regions_lin.txt").c_str());
+    gs_lin.loadControllers((localpath + "/Firmware/src/modules/mc_att_control/lqr_files/k_lin.txt").c_str());
 
-    gs_contin.loadMatrices("/home/ubuntu/src/Firmware/src/modules/mc_att_control/lqr_files/contin_param.txt");
+    gs_contin.loadMatrices((localpath + "/Firmware/src/modules/mc_att_control/lqr_files/contin_param.txt").c_str());
 
     // _K = readMatrixK("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/new_controller.txt");
     // _PMATRIX = readMatrixP("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/new_pe.txt");
@@ -65,23 +67,23 @@ QuadrotorLQRControl::QuadrotorLQRControl()
     _auto_eq_point_flag = true;
 
     ofstream outfile1;
-    outfile1.open("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/control_input.txt", std::ios::out);
+    outfile1.open((localpath + "/Firmware/src/modules/mc_att_control/output_files/control_input.txt").c_str(), std::ios::out);
     outfile1.close();
 
     ofstream outfile3;
-    outfile3.open("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/state.txt", std::ios::out);
+    outfile3.open((localpath + "/Firmware/src/modules/mc_att_control/output_files/state.txt").c_str(), std::ios::out);
     outfile3.close();
 
     ofstream outfile5;
-    outfile5.open("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/lyapunov.txt", std::ios::out);
+    outfile5.open((localpath + "/Firmware/src/modules/mc_att_control/output_files/lyapunov.txt").c_str(), std::ios::out);
     outfile5.close();
 
     ofstream outfile4;
-    outfile4.open("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/ekf.txt", std::ios::out);
+    outfile4.open((localpath + "/Firmware/src/modules/mc_att_control/output_files/ekf.txt").c_str(), std::ios::out);
     outfile4.close();
 
     ofstream outfile2;
-    outfile2.open("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/ref.txt", std::ios::out);
+    outfile2.open((localpath + "/Firmware/src/modules/mc_att_control/output_files/ref.txt").c_str(), std::ios::out);
     outfile2.close();
 
     _past_time = hrt_absolute_time() * 1e-6;
@@ -192,11 +194,11 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
     //"\t" <<  u_control(0,0)+ff_thrust << "\n";
          /* Save data*/
     if(_ready_to_track) {
-        writeStateOnFile("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/state.txt", _current_state, now);
-        writeInputOnFile("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/control_input.txt", u_control_norm, now); 
-        writeLyapunovOnFile("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/lyapunov.txt", _lyap_fun(0,0), now); 
-        writeStateOnFile("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/ekf.txt", _current_state_ekf, now);
-        writeReferenceOnFile("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/ref.txt", _ref, now);
+        writeStateOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/state.txt").c_str(), _current_state, now);
+        writeInputOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/control_input.txt").c_str(), u_control_norm, now); 
+        writeLyapunovOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/lyapunov.txt").c_str(), _lyap_fun(0,0), now); 
+        writeStateOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/ekf.txt").c_str(), _current_state_ekf, now);
+        writeReferenceOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/ref.txt").c_str(), _ref, now);
     }
     
     return u_control_norm;    
