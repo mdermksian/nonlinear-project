@@ -47,37 +47,42 @@ QuadrotorLQRControl::QuadrotorLQRControl()
     u_control(2,0) = 0.0f;
     u_control(3,0) = 0.0f;
 
-    gs_switch.loadRegions("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/regions_switch.txt");
-    gs_switch.loadControllers("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/k_switch.txt");
+    gs_switch.loadRegions("/home/ubuntu/src/Firmware/src/modules/mc_att_control/lqr_files/regions_switch.txt");
+    gs_switch.loadControllers("/home/ubuntu/src/Firmware/src/modules/mc_att_control/lqr_files/k_switch.txt");
     gs_switch.initializeRegion(_current_state(8, 0));
 
-    gs_lin.loadRegions("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/regions_lin.txt");
-    gs_lin.loadControllers("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/k_lin.txt");
+    gs_lin.loadRegions("/home/ubuntu/src/Firmware/src/modules/mc_att_control/lqr_files/regions_lin.txt");
+    gs_lin.loadControllers("/home/ubuntu/src/Firmware/src/modules/mc_att_control/lqr_files/k_lin.txt");
 
-    gs_contin.loadMatrices("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/contin_param.txt");
+    gs_contin.loadMatrices("/home/ubuntu/src/Firmware/src/modules/mc_att_control/lqr_files/contin_param.txt");
 
     // _K = readMatrixK("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/new_controller.txt");
     // _PMATRIX = readMatrixP("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/lqr_files/new_pe.txt");
 
-    ff_thrust = 7.848f; //[N]
+    // ff_thrust = 7.848f; //  [N]
+    ff_thrust = 0.8f * 9.81f;   //  [N]
 
     _auto_eq_point_flag = true;
 
     ofstream outfile1;
-    outfile1.open("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/output_files/control_input.txt", std::ios::out);
+    outfile1.open("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/control_input.txt", std::ios::out);
     outfile1.close();
 
     ofstream outfile3;
-    outfile3.open("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/output_files/state.txt", std::ios::out);
+    outfile3.open("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/state.txt", std::ios::out);
     outfile3.close();
 
     ofstream outfile5;
-    outfile5.open("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/output_files/lyapunov.txt", std::ios::out);
+    outfile5.open("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/lyapunov.txt", std::ios::out);
     outfile5.close();
 
     ofstream outfile4;
-    outfile4.open("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/output_files/ekf.txt", std::ios::out);
+    outfile4.open("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/ekf.txt", std::ios::out);
     outfile4.close();
+
+    ofstream outfile2;
+    outfile2.open("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/ref.txt", std::ios::out);
+    outfile2.close();
 
     _past_time = hrt_absolute_time() * 1e-6;
 }
@@ -121,7 +126,8 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
     if(!_ready_to_track){
         // Check if within 1cm of equilibrium point euclidean distance (not necessarily stable!)
         float dist = (pow(state(0,0)-_eq_point(0,0), 2) + pow(state(1,0)-_eq_point(1,0), 2) + pow(state(2,0)-_eq_point(2,0),2));
-        if( dist < 1e-3 && fabs(state(14, 0)) < 0.05f ){
+        // if( dist < 1e-3 && fabs(state(14, 0)) < 0.05f) {
+        if( dist < 1e-3 && fabs(state(6, 0)) < 0.01f) {
             _ready_to_track = true;
         }
     }
@@ -154,8 +160,7 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
 
     Matrix<float,nCont,nState> K = gs_lin.getK(state(8,0));
     // cout << gs_lin.getRegionInd(state(8,0)) << ", " << state(8,0) << endl;
-    cout << _ref(8,0) << ",  " << state(8,0) << endl;
-    u_control = -0.5f*K*(delta_x);
+    u_control = -K*(delta_x);
 
     // delta_x_T = delta_x.transpose();
     
@@ -186,10 +191,13 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
      
     //"\t" <<  u_control(0,0)+ff_thrust << "\n";
          /* Save data*/
-    // writeStateOnFile("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/output_files/state.txt", _current_state, now);
-    // writeInputOnFile("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/output_files/control_input.txt", u_control_norm, now); 
-    // writeLyapunovOnFile("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/output_files/lyapunov.txt", _lyap_fun(0,0), now); 
-    // writeStateOnFile("/cygdrive/c/PX4/home/Firmware/src/modules/mc_att_control/output_files/ekf.txt", _current_state_ekf, now);
+    if(_ready_to_track) {
+        writeStateOnFile("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/state.txt", _current_state, now);
+        writeInputOnFile("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/control_input.txt", u_control_norm, now); 
+        writeLyapunovOnFile("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/lyapunov.txt", _lyap_fun(0,0), now); 
+        writeStateOnFile("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/ekf.txt", _current_state_ekf, now);
+        writeReferenceOnFile("/home/ubuntu/src/Firmware/src/modules/mc_att_control/output_files/ref.txt", _ref, now);
+    }
     
     return u_control_norm;    
 
@@ -444,6 +452,25 @@ void QuadrotorLQRControl::writeLyapunovOnFile(const char *filename, float value,
     outfile << t << "\t" << value << "\n";   
 	outfile.close();
 	return;
+}
+
+void QuadrotorLQRControl::writeReferenceOnFile(const char *filename, Matrix <float, nState, 1> vect, hrt_abstime t) {
+    const int inds[] = {0, 1, 2, 8};
+
+    ofstream outfile;
+    outfile.open(filename, std::ios::out | std::ios::app);
+    outfile << t << "\t";   // time
+
+        
+    for(int i=0;i<nRef;i++){
+        if(i==nRef-1){
+            outfile << vect(inds[i],0) << "\n";
+        }else{
+            outfile << vect(inds[i],0) << "\t";
+        }
+    }
+    outfile.close();
+    return;
 }
 
 Matrix <float, nState, nState> QuadrotorLQRControl::readMatrixP(const char *filename)

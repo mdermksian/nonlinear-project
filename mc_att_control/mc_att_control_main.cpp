@@ -927,7 +927,7 @@ MulticopterAttitudeControl::run()
 									cout << "STARTING REFERENCE" << endl;
 								}
 								float cur_t = (hrt_absolute_time()-ref_start_time) * 1e-6;
-								Matrix<float,4,1> ref_pt = generate_reference(cur_t, 0, reference_inputs(3,0));
+								Matrix<float,4,1> ref_pt = generate_reference(cur_t, ref_type, reference_inputs(3,0));
 								_LQRcontrol.setReferencePoint(ref_pt);
 								reference_inputs = ref_pt;
 							}

@@ -109,6 +109,8 @@ private:
 
       void writeLyapunovOnFile(const char *filename, float value, hrt_abstime t);
 
+      void writeReferenceOnFile(const char *filename, Matrix <float, nState, 1> vect, hrt_abstime t);
+
       Matrix <float, nState, nState> readMatrixP(const char *filename);
 
       float _past_time;
