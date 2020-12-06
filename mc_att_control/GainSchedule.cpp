@@ -227,6 +227,11 @@ void GainScheduleContin::loadMatrices(const char *filename) {
     if(param_mat.size() != 3) std::cout << "WARNING!!!!! IMPORTING CONTINUOUS MATRICES DIDNT RETURN 3\n";
 }
 
+
+int GainScheduleContin::getRegionInd(float psi) {
+    return 0;
+}
+
 matrix::Matrix<float,nRow,nCol> GainScheduleContin::getK(float psi) {
     psi = cast2pi(psi);
     matrix::Matrix<float,nRow,nCol> output;

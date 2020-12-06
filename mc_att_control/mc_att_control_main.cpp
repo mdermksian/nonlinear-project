@@ -125,7 +125,11 @@ MulticopterAttitudeControl::MulticopterAttitudeControl() :
 	}
 
 	ref_start_time = 0;
-	ref_type = 0; // <---------- CHANGE THIS
+
+	// 0 - Helix
+	// 1 - Lissajous
+	// 2 - Ramp
+	ref_type = 2; // <---------- CHANGE THIS
 
 	_vehicle_status.is_rotary_wing = true;
 

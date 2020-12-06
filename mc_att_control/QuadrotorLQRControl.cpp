@@ -24,6 +24,7 @@ using namespace matrix;
 using namespace std;
 
 string localpath("/cygdrive/c/PX4/home"); //<--- This is the path to the folder containing "Firmware"
+// string localpath("/home/ubuntu/src"); //<--- This is the path to the folder containing "Firmware"
 
 QuadrotorLQRControl::QuadrotorLQRControl()
 {
@@ -129,7 +130,7 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
         // Check if within 1cm of equilibrium point euclidean distance (not necessarily stable!)
         float dist = (pow(state(0,0)-_eq_point(0,0), 2) + pow(state(1,0)-_eq_point(1,0), 2) + pow(state(2,0)-_eq_point(2,0),2));
         // if( dist < 1e-3 && fabs(state(14, 0)) < 0.05f) {
-        if( dist < 1e-3 && fabs(state(6, 0)) < 0.01f) {
+        if( dist < 1e-3 && fabs(state(6, 0)) < 0.005f) {
             _ready_to_track = true;
         }
     }
@@ -160,9 +161,12 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
 
     // cout << state(12,0) << ", " << state(13,0) << ", " << state(14,0) << ", " << state(15,0) << endl;
 
-    Matrix<float,nCont,nState> K = gs_lin.getK(state(8,0));
-    // cout << gs_lin.getRegionInd(state(8,0)) << ", " << state(8,0) << endl;
+    // Matrix<float,nCont,nState> K = gs_switch.getK(state(8,0));
+    // Matrix<float,nCont,nState> K = gs_lin.getK(state(8,0));
+    Matrix<float,nCont,nState> K = gs_contin.getK(state(8,0));
     u_control = -K*(delta_x);
+    
+    // cout << gs_lin.getRegionInd(state(8,0)) << ", " << state(8,0) << endl;
 
     // delta_x_T = delta_x.transpose();
     

@@ -7,7 +7,7 @@ using namespace matrix;
 Matrix<float,4,1>  generate_reference(float t, int type, float last_psir){
 	Matrix<float,4,1> pt;
 	float PI = 3.14159265;
-	if(type == 0){ // Helix
+	if(type == 0) { // Helix
 		float rad = 1.0f;
 		float w = 0.1f;
 		float z_rate = 0.25f;
@@ -17,18 +17,18 @@ Matrix<float,4,1>  generate_reference(float t, int type, float last_psir){
 		float pEr = rad * sin(psir);
 		float hr = z_rate * t;
 
-		pt(0,0) = pNr;
+		pt(0,0) = pNr - rad;
 		pt(1,0) = pEr;
 		pt(2,0) = hr+1.0f;
 		pt(3,0) = psir;
-	} else { // Lissajous
+	} else if(type == 1) { // Lissajous
 		float A = 2.0f;
-		float a = 0.1f;
+		float a = 0.05f;
 		float d = 0.0f;
 		float B = 2.0f;
-		float b = 0.15f;
+		float b = 0.075f;
 		float z_step = 1.0f;
-		float z_per = 10.0f;
+		float z_per = 20.0f;
 
 		float dpNr = 2*PI * a * A * cos(2*PI*a*t + d);
     	float dpEr = 2*PI * b * B * cos(2*PI*b*t);
@@ -39,6 +39,35 @@ Matrix<float,4,1>  generate_reference(float t, int type, float last_psir){
 		float hr = z_step * floor(t / z_per);
 
 		pt(0,0) = pNr;
+		pt(1,0) = pEr;
+		pt(2,0) = hr+1.0f;
+		pt(3,0) = psir;
+	} else {	// Ramp
+		float dist = 3.0f;
+		float edge_per = 10.0f;
+		float z_rate = 0.25f;
+
+		float psir = 3*PI/4 + PI/2*floor(t/edge_per);
+		float hr = z_rate * t;
+
+		int edge = floor(fmod(t, 4*edge_per) / edge_per);
+		float pNr;
+		float pEr;
+		if(edge == 0) {
+			pNr = dist * (1 - fmod(t, edge_per)/edge_per);
+        	pEr = -1 * dist * fmod(t, edge_per)/edge_per;
+        } else if(edge == 1) {
+			pNr = -1 * dist * fmod(t, edge_per)/edge_per;
+        	pEr = dist * (fmod(t, edge_per)/edge_per - 1);
+        } else if(edge == 2) {
+			pNr = dist * (fmod(t, edge_per)/edge_per - 1);
+        	pEr = dist * fmod(t, edge_per)/edge_per;
+        } else {
+			pNr = dist * fmod(t, edge_per)/edge_per;
+        	pEr = dist * (1 - fmod(t, edge_per)/edge_per);
+		}
+
+		pt(0,0) = pNr - dist;
 		pt(1,0) = pEr;
 		pt(2,0) = hr+1.0f;
 		pt(3,0) = psir;
