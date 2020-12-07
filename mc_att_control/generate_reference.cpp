@@ -8,7 +8,7 @@ Matrix<float,4,1>  generate_reference(float t, int type, float last_psir){
 	Matrix<float,4,1> pt;
 	float PI = 3.14159265;
 	if(type == 0) { // Helix
-		float rad = 1.0f;
+		float rad = 2.0f;
 		float w = 0.1f;
 		float z_rate = 0.25f;
 

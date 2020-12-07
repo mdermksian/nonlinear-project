@@ -11,12 +11,12 @@
 /* LINEAR INTERPOLATION GAIN SCHEDULE CLASS */
 /********************************************/
 
-float cast2pi(float psi) {
+float cast2pi(float psi, float min, float max) {
     const float PI = 3.14159265;
-    while(psi < 0) {
+    while(psi < min) {
         psi += 2*PI;
     }
-    return fmod(psi, 2*PI);
+    return fmod(psi, max);
 }
 
 GainScheduleLin::GainScheduleLin() {
@@ -69,7 +69,7 @@ void GainScheduleLin::loadControllers(const char *filename) {
 }
 
 int GainScheduleLin::getRegionInd(float psi) {
-    psi = cast2pi(psi);
+    psi = cast2pi(psi, 0.0f, 6.2831853f);
     float range = max - min;
     float step = range/(numreg);
     int ind = (psi-min)/step;
@@ -82,7 +82,7 @@ int GainScheduleLin::getRegionInd(float psi) {
 }
 
 matrix::Matrix<float,nRow,nCol> GainScheduleLin::getK(float psi) {
-    psi = cast2pi(psi);
+    psi = cast2pi(psi, 0.0f, 6.2831853f);
     int ind = getRegionInd(psi);
     float pos = (psi - regions[ind])/(regions[ind+1] - regions[ind]);
     matrix::Matrix<float,nRow,nCol> K1 = K[ind];
@@ -150,7 +150,7 @@ void GainScheduleSwitch::loadControllers(const char *filename) {
 }
 
 void GainScheduleSwitch::initializeRegion(float psi) {
-    psi = cast2pi(psi);
+    psi = cast2pi(psi, regions[0].start, regions[regions.size()-1].end);
     int ind = -1;
     float lowest = 1e10; //Arbitrary large number to ensure that we find a lower one
     for(int i = 0; i < (int)regions.size(); ++i) {
@@ -171,13 +171,18 @@ void GainScheduleSwitch::initializeRegion(float psi) {
 }
 
 int GainScheduleSwitch::getRegionInd(float psi) {
-    psi = cast2pi(psi);
+    psi = cast2pi(psi, regions[0].start, regions[regions.size()-1].end);
     int ind = cur_reg;
-    Region current = regions[cur_reg];
-    if(psi > current.end) {
+    if(psi > regions[cur_reg].end) {
         ind = cur_reg+1;
-    } else if(psi < current.start) {
+    } else if(psi < regions[cur_reg].start) {
         ind = cur_reg-1;
+    }
+
+    if(cur_reg == (int)regions.size()-1 && psi < 0.05){
+        ind = 0;
+    } else if (cur_reg == 0 && psi > 6.2) {
+        ind = (int)regions.size()-1;
     }
 
     if(ind < 0) {
@@ -186,13 +191,13 @@ int GainScheduleSwitch::getRegionInd(float psi) {
         ind = (int)regions.size()-1;
     }
 
-    cur_reg = ind;
     return ind;
 }
 
 matrix::Matrix<float,nRow,nCol> GainScheduleSwitch::getK(float psi) {
-    psi = cast2pi(psi);
+    psi = cast2pi(psi, regions[0].start, regions[regions.size()-1].end);
     int ind = getRegionInd(psi);
+    cur_reg = ind;
     return K[ind];
 }
 
@@ -233,7 +238,7 @@ int GainScheduleContin::getRegionInd(float psi) {
 }
 
 matrix::Matrix<float,nRow,nCol> GainScheduleContin::getK(float psi) {
-    psi = cast2pi(psi);
+    psi = cast2pi(psi, 0.0f, 6.2831853f);
     matrix::Matrix<float,nRow,nCol> output;
     for(int i = 0; i < nRow; ++i){
         for(int j = 0; j < nCol; ++j){

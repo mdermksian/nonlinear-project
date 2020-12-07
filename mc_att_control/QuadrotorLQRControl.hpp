@@ -101,11 +101,11 @@ private:
       // void computeIntegral(struct vehicle_attitude_s _v_att, struct vehicle_local_position_s  _v_local_pos);
       void computeIntegral(Matrix<float, nState, 1> &state);
 
-      void writeStateOnFile(const char *filename, Matrix <float, nState, 1> vect, hrt_abstime t); 
+      void writeStateOnFile(const char *filename, Matrix <float, nState, 1> vect, hrt_abstime t, int cur_region); 
 
       Matrix <float, nCont, nState> readMatrixK(const char *filename);
 
-      void writeInputOnFile(const char *filename, Matrix <float, nCont, 1> vect, hrt_abstime t); 
+      void writeInputOnFile(const char *filename, Matrix <float, nCont, 1> vect, hrt_abstime t, int cur_region); 
 
       void writeLyapunovOnFile(const char *filename, float value, hrt_abstime t);
 

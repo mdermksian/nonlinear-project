@@ -161,8 +161,11 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
 
     // cout << state(12,0) << ", " << state(13,0) << ", " << state(14,0) << ", " << state(15,0) << endl;
 
+    // int cur_region = gs_switch.getRegionInd(state(8,0));
+    // cout << state(8,0) << ", " << cur_region << endl;
     // Matrix<float,nCont,nState> K = gs_switch.getK(state(8,0));
     // Matrix<float,nCont,nState> K = gs_lin.getK(state(8,0));
+    int cur_region = 0; //<-- just for contin, so the program doesn't error when trying to save this variable 
     Matrix<float,nCont,nState> K = gs_contin.getK(state(8,0));
     u_control = -K*(delta_x);
     
@@ -198,10 +201,10 @@ Matrix<float,nCont,1> QuadrotorLQRControl::LQRcontrol()
     //"\t" <<  u_control(0,0)+ff_thrust << "\n";
          /* Save data*/
     if(_ready_to_track) {
-        writeStateOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/state.txt").c_str(), _current_state, now);
-        writeInputOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/control_input.txt").c_str(), u_control_norm, now); 
+        writeStateOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/state.txt").c_str(), _current_state, now, cur_region);
+        writeInputOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/control_input.txt").c_str(), u_control_norm, now, cur_region); 
         writeLyapunovOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/lyapunov.txt").c_str(), _lyap_fun(0,0), now); 
-        writeStateOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/ekf.txt").c_str(), _current_state_ekf, now);
+        writeStateOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/ekf.txt").c_str(), _current_state_ekf, now, cur_region);
         writeReferenceOnFile((localpath + "/Firmware/src/modules/mc_att_control/output_files/ref.txt").c_str(), _ref, now);
     }
     
@@ -416,11 +419,12 @@ bool QuadrotorLQRControl::getAutoEqPointFlag()
 
 /* Save data on files */
 
-void QuadrotorLQRControl::writeStateOnFile(const char *filename, Matrix <float, nState, 1> vect, hrt_abstime t) {
+void QuadrotorLQRControl::writeStateOnFile(const char *filename, Matrix <float, nState, 1> vect, hrt_abstime t, int cur_region) {
 
 	ofstream outfile;
 	outfile.open(filename, std::ios::out | std::ios::app);
     outfile << t << "\t";   // time
+    outfile << cur_region << "\t";
     
 	for(int i=0;i<nState;i++){
 		if(i==nState-1){
@@ -429,16 +433,18 @@ void QuadrotorLQRControl::writeStateOnFile(const char *filename, Matrix <float, 
             outfile << vect(i,0) << "\t";
 		}
 	}
+
 	outfile.close();
 	return;
 }
 
 
-void QuadrotorLQRControl::writeInputOnFile(const char *filename, Matrix <float, nCont, 1> vect, hrt_abstime t) {
+void QuadrotorLQRControl::writeInputOnFile(const char *filename, Matrix <float, nCont, 1> vect, hrt_abstime t, int cur_region) {
 
 	ofstream outfile;
 	outfile.open(filename, std::ios::out | std::ios::app);
     outfile << t << "\t";   // time
+    outfile << cur_region << "\t";
         
 	for(int i=0;i<nCont;i++){
 		if(i==3){
