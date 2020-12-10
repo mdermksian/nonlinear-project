@@ -229,7 +229,7 @@ void GainScheduleContin::loadMatrices(const char *filename) {
         }
     } else std::cout << "Unable to open matrix file\n";
 
-    if(param_mat.size() != 3) std::cout << "WARNING!!!!! IMPORTING CONTINUOUS MATRICES DIDNT RETURN 3\n";
+    if(param_mat.size() != 4) std::cout << "WARNING!!!!! IMPORTING CONTINUOUS MATRICES DIDNT RETURN 4\n";
 }
 
 
@@ -242,7 +242,7 @@ matrix::Matrix<float,nRow,nCol> GainScheduleContin::getK(float psi) {
     matrix::Matrix<float,nRow,nCol> output;
     for(int i = 0; i < nRow; ++i){
         for(int j = 0; j < nCol; ++j){
-            output(i,j) = param_mat[0](i,j) * sin(psi+param_mat[1](i,j)) + param_mat[2](i,j);
+            output(i,j) = param_mat[0](i,j) * sin(param_mat[1](i,j)*psi + param_mat[2](i,j)) + param_mat[3](i,j);
         }
     }
     return output;

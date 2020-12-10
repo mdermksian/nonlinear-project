@@ -13,12 +13,12 @@ Matrix<float,4,1>  generate_reference(float t, int type, float last_psir){
 		float z_rate = 0.25f;
 
 		float psir = 2*PI * w * t;
-		float pNr = rad * cos(psir);
-		float pEr = rad * sin(psir);
+		float pNr = rad * sin(psir);
+		float pEr = -1*rad * cos(psir);
 		float hr = z_rate * t;
 
-		pt(0,0) = pNr - rad;
-		pt(1,0) = pEr;
+		pt(0,0) = pNr;
+		pt(1,0) = pEr + rad;
 		pt(2,0) = hr+1.0f;
 		pt(3,0) = psir;
 	} else if(type == 1) { // Lissajous
@@ -47,7 +47,7 @@ Matrix<float,4,1>  generate_reference(float t, int type, float last_psir){
 		float edge_per = 10.0f;
 		float z_rate = 0.25f;
 
-		float psir = 3*PI/4 + PI/2*floor(t/edge_per);
+		float psir = -3*PI/4 - PI/2*floor(t/edge_per);
 		float hr = z_rate * t;
 
 		int edge = floor(fmod(t, 4*edge_per) / edge_per);
